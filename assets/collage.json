@@ -3,9 +3,17 @@
     "name": "Atrium",
     "info": "Students can meet in small groups in the Atrium for informal sessions."
   },
-  "LobbyShop": {
-    "name": "Lobby Shop",
-    "info": "Students can get lots of items from the Lobby Shop."
+  "Restaurant_Sofa__1_": {
+    "name": "Sofa",
+    "info": "Students can sit here for rest"
+  },
+  "Restaurant_Sofa__2_": {
+    "name": "Sofa",
+    "info": "Students can sit here for rest"
+  },
+  "Restaurant_Sofa__3_": {
+    "name": "Sofa",
+    "info": "Students can sit here for rest"
   },
   "Kitchen_Worktop_Hobs__1_": {
     "name": "Kitchen",
