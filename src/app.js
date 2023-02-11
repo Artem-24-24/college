@@ -12,8 +12,10 @@ import {RGBELoader} from "three/addons/loaders/RGBELoader";
 
 import venice_sunset_environment from "../assets/hdr/venice_sunset_1k.hdr"
 import college from "../assets/college.glb"
+import collegeInfo from "../assets/collage.json"
 
 import snowman from "../assets/snowman_-_low_poly.glb"
+import {CanvasUI} from "./utils/CanvasUI";
 const snowmanPosition = {x: 0, y: 0.5, z: -1, scale: 1.0}
 
 class App {
@@ -53,7 +55,7 @@ class App {
 
         container.appendChild(this.renderer.domElement);
 
-        // this.setEnvironment();
+        this.setEnvironment();
 
         // this.initScene();
         this.setupXR();
@@ -72,9 +74,18 @@ class App {
         this.stats = new Stats()
         container.appendChild( this.stats.dom )
 
-        // this.loadingBar = new LoadingBar()
+        this.loadingBar = new LoadingBar()
 
         this.loadCollege()
+
+        // Add here task 2
+        this.workingVec3 = new THREE.Vector3()
+        this.vecDolly = new THREE.Vector3()
+        this.vecObject = new THREE.Vector3()
+
+        // TASK 2 load JSON file with text for info boards
+        this.boardShown = ''
+        this.boardData = collegeInfo
     }
 
     setEnvironment(){
@@ -115,35 +126,35 @@ class App {
             // resource URL
             college,
             // called when the resource is loaded
-             gltf => {
+            gltf => {
 
-                 const college = gltf.scene.children[0];
-                 self.scene.add(college)
+                const college = gltf.scene.children[0];
+                self.scene.add(college)
 
-                 college.traverse(function (child) {
-                     if (child.isMesh) {
-                         if (child.name.indexOf("PROXY") != -1) {
-                             child.material.visible = false;
-                             self.proxy = child
-                         } else if (child.material.name.indexOf('Glass') != -1) {
-                             child.material.opacity = 0.1
-                             child.material.transparent = true
-                         } else if (child.material.name.indexOf("SkyBox") != -1) {
-                             const mat1 = child.material
-                             const mat2 = new THREE.MeshBasicMaterial({map: mat1.map})
-                             child.material = mat2
-                             mat1.dispose()
-                         }
-                     }
-                 })
+                college.traverse(function (child) {
+                    if (child.isMesh) {
+                        if (child.name.indexOf("PROXY") != -1) {
+                            child.material.visible = false;
+                            self.proxy = child
+                        } else if (child.material.name.indexOf('Glass') != -1) {
+                            child.material.opacity = 0.1
+                            child.material.transparent = true
+                        } else if (child.material.name.indexOf("SkyBox") != -1) {
+                            const mat1 = child.material
+                            const mat2 = new THREE.MeshBasicMaterial({map: mat1.map})
+                            child.material = mat2
+                            mat1.dispose()
+                        }
+                    }
+                })
 
-                 // self.loadingBar.visible = false
+                self.loadingBar.visible = false
 
-                 self.setupXR()
-             },
+                self.setupXR()
+            },
             // called while loading is progressing
             xhr => {
-                // self.loadingBar.progress = (xhr.loaded / xhr.total);
+                self.loadingBar.progress = (xhr.loaded / xhr.total);
             },
             // called when loading has errors
             error => {
@@ -235,10 +246,15 @@ class App {
 
         // Add Enter WebXR button
         document.body.appendChild(VRButton.createButton(this.renderer))
+
+        // TASK 2 Initialize mesh for info board
+
+        this.createUI();
+
         this.renderer.setAnimationLoop(this.render.bind(this))
     }
 
-    buildControllers( parent = this.scene ){
+    buildControllers(parent = this.scene) {
         const controllerModelFactory = new XRControllerModelFactory();
 
         const geometry = new THREE.BufferGeometry().setFromPoints( [ new THREE.Vector3( 0, 0, 0 ), new THREE.Vector3( 0, 0, -1 ) ] );
@@ -293,9 +309,38 @@ class App {
             pos = this.dolly.getWorldPosition( this.origin );
         }
 
-        // Enter code HERE
+        // TASK 1. Update moving constraints
 
+        dir.set(-1,0,0);
+        dir.applyMatrix4(this.dolly.matrix);
+        dir.normalize();
+        this.raycaster.set(pos, dir);
 
+        intersect = this.raycaster.intersectObject(this.proxy);
+        if (intersect.length>0){
+            if (intersect[0].distance<wallLimit) this.dolly.translateX(wallLimit-intersect[0].distance);
+        }
+
+        //cast right
+        dir.set(1,0,0);
+        dir.applyMatrix4(this.dolly.matrix);
+        dir.normalize();
+        this.raycaster.set(pos, dir);
+
+        intersect = this.raycaster.intersectObject(this.proxy);
+        if (intersect.length>0){
+            if (intersect[0].distance<wallLimit) this.dolly.translateX(intersect[0].distance-wallLimit);
+        }
+
+        //cast down
+        dir.set(0,-1,0);
+        pos.y += 1.5;
+        this.raycaster.set(pos, dir);
+
+        intersect = this.raycaster.intersectObject(this.proxy);
+        if (intersect.length>0){
+            this.dolly.position.copy( intersect[0].point );
+        }
         //Restore the original rotation
         this.dolly.quaternion.copy( quaternion );
     }
@@ -308,6 +353,35 @@ class App {
         this.camera.aspect = window.innerWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    createUI() {
+        const config = {
+            panelSize: { height: 0.5 },
+            height: 256,
+            name: { fontSize: 50, height: 70 },
+            info: { position:{ top: 70 }, backgroundColor: "#ccc", fontColor:"#000" }
+        };
+
+        const content = {
+            name: "name",
+            info: "info"
+        };
+
+        this.ui = new CanvasUI( content, config );
+        this.scene.add( this.ui.mesh );
+    }
+
+    showInfoBoard( name, obj, pos ) {
+        if (this.ui === undefined ) return;
+        this.ui.position.copy(pos).add( this.workingVec3.set( 0, 1.3, 0 ) );
+        const camPos = this.dummyCam.getWorldPosition( this.workingVec3 );
+        this.ui.updateElement( 'name', obj.name );
+        this.ui.updateElement( 'info', obj.info );
+        this.ui.update();
+        this.ui.lookAt( camPos )
+        this.ui.visible = true;
+        this.boardShown = name;
     }
 
     render( timestamp, frame) {
@@ -374,6 +448,28 @@ class App {
         if (this.renderer.xr.isPresenting && this.selectPressed){
             this.moveDolly(dt);
         }
+
+        if (this.renderer.xr.isPresenting && this.boardData) {
+            const scene = this.scene;
+            const dollyPos = this.dolly.getWorldPosition(this.vecDolly);
+            let boardFound = false;
+            Object.entries(this.boardData).forEach(([name, info]) => {
+                const obj = scene.getObjectByName(name)
+                if (obj !== undefined) {
+                    const pos = obj.getWorldPosition(this.vecObject)
+                    if (dollyPos.distanceTo(pos) < 3) {
+                        boardFound = true;
+                        if (this.boardShown !== name) this.showInfoBoard(name, info, pos)
+                    }
+                }
+            })
+            if (!boardFound) {
+                this.boardShown = ''
+                this.ui.visible = false
+            }
+        }
+
+
         this.stats.update()
         this.renderer.render(this.scene, this.camera);
     }
