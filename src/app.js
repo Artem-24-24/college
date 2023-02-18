@@ -13,10 +13,11 @@ import {RGBELoader} from "three/addons/loaders/RGBELoader";
 import venice_sunset_environment from "../assets/hdr/venice_sunset_1k.hdr"
 import college from "../assets/college.glb"
 import collegeInfo from "../assets/collage.json"
+import axe from "../assets/axe.glb"
 
 import snowman from "../assets/snowman_-_low_poly.glb"
 import {CanvasUI} from "./utils/CanvasUI";
-const snowmanPosition = {x: 0, y: 0.5, z: -1, scale: 1.0}
+import {GazeController} from "./utils/GazeController";
 
 class App {
     constructor() {
@@ -77,6 +78,7 @@ class App {
         this.loadingBar = new LoadingBar()
 
         this.loadCollege()
+        this.initAxe()
 
         // Add here task 2
         this.workingVec3 = new THREE.Vector3()
@@ -163,6 +165,16 @@ class App {
         )
     }
 
+    initAxe() {
+        const self = this
+
+        this.loadAsset(axe, 0, 1.6, -.5,  scene => {
+            const scale = 5
+            scene.scale.set(scale, scale, scale)
+            self.axe = scene
+        })
+    }
+
     initScene() {
         this.room = new THREE.LineSegments(
             new BoxLineGeometry(6, 6, 6, 10, 10, 10),
@@ -183,13 +195,7 @@ class App {
         this.room.geometry.translate(0, 3, 0);
         this.scene.add(this.room);
 
-        const self = this
 
-        this.loadAsset(snowman, snowmanPosition.x, snowmanPosition.y, snowmanPosition.z, scene => {
-            const scale = snowmanPosition.scale
-            scene.scale.set(scale, scale, scale)
-            self.snowman = scene
-        })
 
     }
 
@@ -239,7 +245,16 @@ class App {
         const self = this
 
         // TASK 3. Initialized gaze if missed grip controller
+const timeoutId = setTimeout (connectionTimeout, 4000)
 
+        function onConnected(event) {
+            clearTimeout(timeoutId)
+        }
+
+        function connectionTimeout() {
+            self.useGaze = true
+            self.gazeController = new GazeController(self.scene, self.dummyCam)
+        }
 
         this.controllers = this.buildControllers(this.dolly)
         this.controllers.forEach((controller) => {
@@ -247,6 +262,7 @@ class App {
             controller.addEventListener('selectend', onSelectEnd)
 
             // TASK 3. Add event listener for `connected` event
+        controller.addEventListener('connected', onConnected)
         })
 
         // Add Enter WebXR button
@@ -452,33 +468,69 @@ class App {
 
         // TASK 3. Move if gaze controller detect static position
 
+
+        let moveGaze = false
+
+        if(this.useGaze && this.gazeController !== undefined) {
+            this.gazeController.update()
+            moveGaze = (this.gazeController.mode == GazeController.Modes.MOVE)
+        }
+
+        if (this.renderer.xr.isPresenting && (this.selectPressed || moveGaze)) {
+            this.moveDolly(dt);
+
+        }
         if (this.renderer.xr.isPresenting && this.selectPressed ) {
             this.moveDolly(dt);
         }
 
-        if (this.renderer.xr.isPresenting && this.boardData) {
-            const scene = this.scene;
+        // if (this.renderer.xr.isPresenting && this.boardData) {
+        //     const scene = this.scene;
+        //     const dollyPos = this.dolly.getWorldPosition(this.vecDolly);
+        //     let boardFound = false;
+        //     Object.entries(this.boardData).forEach(([name, info]) => {
+        //         const obj = scene.getObjectByName(name)
+        //         if (obj !== undefined) {
+        //             const pos = obj.getWorldPosition(this.vecObject)
+        //             if (dollyPos.distanceTo(pos) < 3) {
+        //                 boardFound = true;
+        //                 if (this.boardShown !== name) this.showInfoBoard(name, info, pos)
+        //             }
+        //         }
+        //     })
+        //     if (!boardFound) {
+        //         this.boardShown = ''
+        //         this.ui.visible = false
+        //     }
+        // }
+
+
+        if(this.renderer.xr.isPresenting && this.boardData) {
+
+            const table = this.scene.getObjectByName("Atrium_Table_1")
+            const tablePos = table.getWorldPosition(this.vecObject)
             const dollyPos = this.dolly.getWorldPosition(this.vecDolly);
-            let boardFound = false;
-            Object.entries(this.boardData).forEach(([name, info]) => {
-                const obj = scene.getObjectByName(name)
-                if (obj !== undefined) {
-                    const pos = obj.getWorldPosition(this.vecObject)
-                    if (dollyPos.distanceTo(pos) < 3) {
-                        boardFound = true;
-                        if (this.boardShown !== name) this.showInfoBoard(name, info, pos)
-                    }
-                }
-            })
-            if (!boardFound) {
-                this.boardShown = ''
-                this.ui.visible = false
+
+            // Object.entries(this.skullData).forEach(([name, properties]) => {
+            //     const height = properties.height
+
+            if (dollyPos.distanceTo(tablePos) < 3) {
+                this.skullInfo = 'axe.glb'
+                this.axe.position.set(tablePos.x, tablePos.y + 2, tablePos.z)
+
+                // this.skull.translateY(1.2)
+                this.axe.visible = true
+            } else {
+                this.axe.visible = false
             }
+            if (this.axe) {
+                const camPos = this.dummyCam.getWorldPosition(this.workingVec3)
+                this.axe.lookAt(camPos)
+            }
+
+            this.stats.update()
+            this.renderer.render(this.scene, this.camera);
         }
-
-
-        this.stats.update()
-        this.renderer.render(this.scene, this.camera);
     }
 
     rightStick(deltaX, deltaY, buttonPressed) {
