@@ -31,14 +31,14 @@ class App {
         this.camera.position.set(0, 1.6, 0);
 
         // Dolly and dummy camera objects
-        this.dolly = new THREE.Object3D(  );
+        this.dolly = new THREE.Object3D();
         this.dolly.position.set(0, 0, 10);
-        this.dolly.add( this.camera );
+        this.dolly.add(this.camera);
         this.dummyCam = new THREE.Object3D();
-        this.camera.add( this.dummyCam );
+        this.camera.add(this.dummyCam);
 
         this.scene = new THREE.Scene();
-        this.scene.add( this.dolly );
+        this.scene.add(this.dolly);
 
         // this.scene.background = new THREE.Color(0x505050);
         const ambient = new THREE.HemisphereLight(0xFFFFFF, 0xAAAAAA, 0.8);
@@ -68,12 +68,12 @@ class App {
         // this.renderer.setAnimationLoop(this.render.bind(this));
         this.vec3 = new THREE.Vector3()
         this.clock = new THREE.Clock()
-        this.up = new THREE.Vector3(0,1,0)
+        this.up = new THREE.Vector3(0, 1, 0)
         this.origin = new THREE.Vector3()
         this.raycaster = new THREE.Raycaster()
 
         this.stats = new Stats()
-        container.appendChild( this.stats.dom )
+        container.appendChild(this.stats.dom)
 
         this.loadingBar = new LoadingBar()
 
@@ -90,25 +90,25 @@ class App {
         this.boardData = collegeInfo
     }
 
-    setEnvironment(){
-        const loader = new RGBELoader().setDataType( THREE.HalfFloatType );
-        const pmremGenerator = new THREE.PMREMGenerator( this.renderer );
+    setEnvironment() {
+        const loader = new RGBELoader().setDataType(THREE.HalfFloatType);
+        const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
         pmremGenerator.compileEquirectangularShader();
 
         const self = this;
 
-        loader.load( venice_sunset_environment, ( texture ) => {
-            const envMap = pmremGenerator.fromEquirectangular( texture ).texture;
+        loader.load(venice_sunset_environment, (texture) => {
+            const envMap = pmremGenerator.fromEquirectangular(texture).texture;
             pmremGenerator.dispose();
 
             self.scene.environment = envMap;
 
-        }, undefined, (err)=>{
-            console.error( 'An error occurred setting the environment');
-        } );
+        }, undefined, (err) => {
+            console.error('An error occurred setting the environment');
+        });
     }
 
-    loadCollege(){
+    loadCollege() {
 
         // const loader = new GLTFLoader( ).setPath(this.assetsPath);
         // const dracoLoader = new DRACOLoader();
@@ -168,7 +168,7 @@ class App {
     initAxe() {
         const self = this
 
-        this.loadAsset(axe, 0, 1.6, -.5,  scene => {
+        this.loadAsset(axe, 0, 1.6, -.5, scene => {
             const scale = 5
             scene.scale.set(scale, scale, scale)
             self.axe = scene
@@ -194,7 +194,6 @@ class App {
 
         this.room.geometry.translate(0, 3, 0);
         this.scene.add(this.room);
-
 
 
     }
@@ -245,7 +244,7 @@ class App {
         const self = this
 
         // TASK 3. Initialized gaze if missed grip controller
-const timeoutId = setTimeout (connectionTimeout, 4000)
+        const timeoutId = setTimeout(connectionTimeout, 4000)
 
         function onConnected(event) {
             clearTimeout(timeoutId)
@@ -262,7 +261,7 @@ const timeoutId = setTimeout (connectionTimeout, 4000)
             controller.addEventListener('selectend', onSelectEnd)
 
             // TASK 3. Add event listener for `connected` event
-        controller.addEventListener('connected', onConnected)
+            controller.addEventListener('connected', onConnected)
         })
 
         // Add Enter WebXR button
@@ -278,29 +277,29 @@ const timeoutId = setTimeout (connectionTimeout, 4000)
     buildControllers(parent = this.scene) {
         const controllerModelFactory = new XRControllerModelFactory();
 
-        const geometry = new THREE.BufferGeometry().setFromPoints( [ new THREE.Vector3( 0, 0, 0 ), new THREE.Vector3( 0, 0, -1 ) ] );
+        const geometry = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -1)]);
 
-        const line = new THREE.Line( geometry );
+        const line = new THREE.Line(geometry);
         line.scale.z = 0;
 
         const controllers = [];
 
-        for(let i=0; i<=1; i++){
-            const controller = this.renderer.xr.getController( i );
-            controller.add( line.clone() );
+        for (let i = 0; i <= 1; i++) {
+            const controller = this.renderer.xr.getController(i);
+            controller.add(line.clone());
             controller.userData.selectPressed = false;
-            parent.add( controller );
-            controllers.push( controller );
+            parent.add(controller);
+            controllers.push(controller);
 
-            const grip = this.renderer.xr.getControllerGrip( i );
-            grip.add( controllerModelFactory.createControllerModel( grip ) );
-            parent.add( grip );
+            const grip = this.renderer.xr.getControllerGrip(i);
+            grip.add(controllerModelFactory.createControllerModel(grip));
+            parent.add(grip);
         }
 
         return controllers;
     }
 
-    moveDolly(dt){
+    moveDolly(dt) {
         if (this.proxy === undefined) return;
 
         const wallLimit = 1.3;
@@ -313,7 +312,7 @@ const timeoutId = setTimeout (connectionTimeout, 4000)
         //Store original dolly rotation
         const quaternion = this.dolly.quaternion.clone();
         //Get rotation for movement from the headset pose
-        this.dolly.quaternion.copy( this.dummyCam.getWorldQuaternion(q) );
+        this.dolly.quaternion.copy(this.dummyCam.getWorldQuaternion(q));
         this.dolly.getWorldDirection(dir);
         dir.negate();
         this.raycaster.set(pos, dir);
@@ -321,53 +320,53 @@ const timeoutId = setTimeout (connectionTimeout, 4000)
         let blocked = false;
 
         let intersect = this.raycaster.intersectObject(this.proxy);
-        if (intersect.length>0){
+        if (intersect.length > 0) {
             if (intersect[0].distance < wallLimit) blocked = true;
         }
 
-        if (!blocked){
-            this.dolly.translateZ(-dt*speed);
-            pos = this.dolly.getWorldPosition( this.origin );
+        if (!blocked) {
+            this.dolly.translateZ(-dt * speed);
+            pos = this.dolly.getWorldPosition(this.origin);
         }
 
         // TASK 1. Update moving constraints
 
-        dir.set(-1,0,0);
+        dir.set(-1, 0, 0);
         dir.applyMatrix4(this.dolly.matrix);
         dir.normalize();
         this.raycaster.set(pos, dir);
 
         intersect = this.raycaster.intersectObject(this.proxy);
-        if (intersect.length>0){
-            if (intersect[0].distance<wallLimit) this.dolly.translateX(wallLimit-intersect[0].distance);
+        if (intersect.length > 0) {
+            if (intersect[0].distance < wallLimit) this.dolly.translateX(wallLimit - intersect[0].distance);
         }
 
         //cast right
-        dir.set(1,0,0);
+        dir.set(1, 0, 0);
         dir.applyMatrix4(this.dolly.matrix);
         dir.normalize();
         this.raycaster.set(pos, dir);
 
         intersect = this.raycaster.intersectObject(this.proxy);
-        if (intersect.length>0){
-            if (intersect[0].distance<wallLimit) this.dolly.translateX(intersect[0].distance-wallLimit);
+        if (intersect.length > 0) {
+            if (intersect[0].distance < wallLimit) this.dolly.translateX(intersect[0].distance - wallLimit);
         }
 
         //cast down
-        dir.set(0,-1,0);
+        dir.set(0, -1, 0);
         pos.y += 1.5;
         this.raycaster.set(pos, dir);
 
         intersect = this.raycaster.intersectObject(this.proxy);
-        if (intersect.length>0){
-            this.dolly.position.copy( intersect[0].point );
+        if (intersect.length > 0) {
+            this.dolly.position.copy(intersect[0].point);
         }
         //Restore the original rotation
-        this.dolly.quaternion.copy( quaternion );
+        this.dolly.quaternion.copy(quaternion);
     }
 
-    get selectPressed(){
-        return ( this.controllers !== undefined && (this.controllers[0].userData.selectPressed || this.controllers[1].userData.selectPressed) );
+    get selectPressed() {
+        return (this.controllers !== undefined && (this.controllers[0].userData.selectPressed || this.controllers[1].userData.selectPressed));
     }
 
     resize() {
@@ -378,10 +377,10 @@ const timeoutId = setTimeout (connectionTimeout, 4000)
 
     createUI() {
         const config = {
-            panelSize: { height: 0.5 },
+            panelSize: {height: 0.5},
             height: 256,
-            name: { fontSize: 50, height: 70 },
-            info: { position:{ top: 70 }, backgroundColor: "#ccc", fontColor:"#000" }
+            name: {fontSize: 50, height: 70},
+            info: {position: {top: 70}, backgroundColor: "#ccc", fontColor: "#000"}
         };
 
         const content = {
@@ -389,80 +388,23 @@ const timeoutId = setTimeout (connectionTimeout, 4000)
             info: "info"
         };
 
-        this.ui = new CanvasUI( content, config );
-        this.scene.add( this.ui.mesh );
+        this.ui = new CanvasUI(content, config);
+        this.scene.add(this.ui.mesh);
     }
 
-    showInfoBoard( name, obj, pos ) {
-        if (this.ui === undefined ) return;
-        this.ui.position.copy(pos).add( this.workingVec3.set( 0, 1.3, 0 ) );
-        const camPos = this.dummyCam.getWorldPosition( this.workingVec3 );
-        this.ui.updateElement( 'name', obj.name );
-        this.ui.updateElement( 'info', obj.info );
+    showInfoBoard(name, obj, pos) {
+        if (this.ui === undefined) return;
+        this.ui.position.copy(pos).add(this.workingVec3.set(0, 1.3, 0));
+        const camPos = this.dummyCam.getWorldPosition(this.workingVec3);
+        this.ui.updateElement('name', obj.name);
+        this.ui.updateElement('info', obj.info);
         this.ui.update();
-        this.ui.lookAt( camPos )
+        this.ui.lookAt(camPos)
         this.ui.visible = true;
         this.boardShown = name;
     }
 
-    render( timestamp, frame) {
-        // if (this.renderer.xr.isPresenting) {
-        //     const session = this.renderer.xr.getSession();
-        //     const inputSources = session.inputSources;
-        //
-        //     this.counter += this.clock.getDelta()
-        //     if (this.counter > .2) {
-        //         this.getInputSources = true
-        //         this.counter = 0
-        //         // this.rightStick(1, -1, true)   // For DEBUG
-        //         this.leftStick(1, 1, true)   // For DEBUG
-        //     }
-        //     if (this.getInputSources) {
-        //         const info = [];
-        //
-        //         inputSources.forEach(inputSource => {
-        //             const gp = inputSource.gamepad;
-        //             const axes = gp.axes;
-        //             const buttons = gp.buttons;
-        //             const mapping = gp.mapping;
-        //             this.useStandard = (mapping === 'xr-standard');
-        //             const gamepad = {axes, buttons, mapping};
-        //             const handedness = inputSource.handedness;
-        //             const profiles = inputSource.profiles;
-        //             this.type = "";
-        //             profiles.forEach(profile => {
-        //                 if (profile.indexOf('touchpad') !== -1) this.type = 'touchpad';
-        //                 if (profile.indexOf('thumbstick') !== -1) this.type = 'thumbstick';
-        //             });
-        //             const targetRayMode = inputSource.targetRayMode;
-        //             info.push({gamepad, handedness, profiles, targetRayMode});
-        //         });
-        //
-        //         console.log(JSON.stringify(info));
-        //
-        //         this.getInputSources = false;
-        //     } else if (this.useStandard && this.type !== "") {
-        //         inputSources.forEach(inputSource => {
-        //             const gp = inputSource.gamepad;
-        //             const thumbstick = (this.type === 'thumbstick');
-        //             const offset = (thumbstick) ? 2 : 0;
-        //             const btnIndex = (thumbstick) ? 3 : 2;
-        //             const btnPressed = gp.buttons[btnIndex].pressed;
-        //             const material = (btnPressed) ? this.materials[1] : this.materials[0];
-        //             const deltaX = gp.axes[offset]
-        //             const deltaY = gp.axes[offset + 1]
-        //             if (inputSource.handedness === 'right') {
-        //                 this.rsphere.position.set(0.5, 1.6, -1).add(this.vec3.set(deltaX, -deltaY, 0));
-        //                 this.rsphere.material = material;
-        //                 this.rightStick(deltaX, deltaY, btnPressed)
-        //             } else if (inputSource.handedness === 'left') {
-        //                 this.lsphere.position.set(-0.5, 1.6, -1).add(this.vec3.set(deltaX, -deltaY, 0));
-        //                 this.lsphere.material = material;
-        //                 this.leftStick(deltaX, deltaY, btnPressed)
-        //             }
-        //         })
-        //     }
-        // }
+    render(timestamp, frame) {
 
         const dt = this.clock.getDelta();
 
@@ -471,7 +413,7 @@ const timeoutId = setTimeout (connectionTimeout, 4000)
 
         let moveGaze = false
 
-        if(this.useGaze && this.gazeController !== undefined) {
+        if (this.useGaze && this.gazeController !== undefined) {
             this.gazeController.update()
             moveGaze = (this.gazeController.mode == GazeController.Modes.MOVE)
         }
@@ -480,32 +422,32 @@ const timeoutId = setTimeout (connectionTimeout, 4000)
             this.moveDolly(dt);
 
         }
-        if (this.renderer.xr.isPresenting && this.selectPressed ) {
+        if (this.renderer.xr.isPresenting && this.selectPressed) {
             this.moveDolly(dt);
         }
 
-        // if (this.renderer.xr.isPresenting && this.boardData) {
-        //     const scene = this.scene;
-        //     const dollyPos = this.dolly.getWorldPosition(this.vecDolly);
-        //     let boardFound = false;
-        //     Object.entries(this.boardData).forEach(([name, info]) => {
-        //         const obj = scene.getObjectByName(name)
-        //         if (obj !== undefined) {
-        //             const pos = obj.getWorldPosition(this.vecObject)
-        //             if (dollyPos.distanceTo(pos) < 3) {
-        //                 boardFound = true;
-        //                 if (this.boardShown !== name) this.showInfoBoard(name, info, pos)
-        //             }
-        //         }
-        //     })
-        //     if (!boardFound) {
-        //         this.boardShown = ''
-        //         this.ui.visible = false
-        //     }
-        // }
+        if (this.renderer.xr.isPresenting && this.boardData) {
+            const scene = this.scene;
+            const dollyPos = this.dolly.getWorldPosition(this.vecDolly);
+            let boardFound = false;
+            Object.entries(this.boardData).forEach(([name, info]) => {
+                const obj = scene.getObjectByName(name)
+                if (obj !== undefined) {
+                    const pos = obj.getWorldPosition(this.vecObject)
+                    if (dollyPos.distanceTo(pos) < 3) {
+                        boardFound = true;
+                        if (this.boardShown !== name) this.showInfoBoard(name, info, pos)
+                    }
+                }
+            })
+            if (!boardFound) {
+                this.boardShown = ''
+                this.ui.visible = false
+            }
+        }
 
 
-        if(this.renderer.xr.isPresenting && this.boardData) {
+        if (this.renderer.xr.isPresenting && this.boardData) {
 
             const table = this.scene.getObjectByName("Atrium_Table_1")
             const tablePos = table.getWorldPosition(this.vecObject)
@@ -527,37 +469,14 @@ const timeoutId = setTimeout (connectionTimeout, 4000)
                 const camPos = this.dummyCam.getWorldPosition(this.workingVec3)
                 this.axe.lookAt(camPos)
             }
-
-            this.stats.update()
-            this.renderer.render(this.scene, this.camera);
         }
-    }
 
-    rightStick(deltaX, deltaY, buttonPressed) {
-        if (this.snowman && buttonPressed) {
-            // Zoom model
-            const currentScale = this.snowman.scale.x
-            let scale
-            if (currentScale >= 1) {
-                scale = currentScale - .1 * deltaY
-            } else {
-                scale = 1 / (1 / currentScale + .1 * deltaY)
-            }
-            this.snowman.scale.set(scale, scale, scale)
-        } else if(this.snowman) {
-            // Rotate model
-            this.snowman.rotateY(Math.PI / 180 * 10 * deltaX)
-            this.snowman.rotateZ(Math.PI / 180 * 10 * deltaY)
-        }
-    }
-
-    leftStick(deltaX, deltaY, buttonPressed) {
-        if (this.snowman && buttonPressed) {
-
-        } else if(this.snowman) {
-            this.snowman.position.add(this.vec3.set(.05 * deltaX, 0, .05 * deltaY))
-        }
+        this.stats.update()
+        this.renderer.render(this.scene, this.camera);
     }
 }
+
+
+
 
 export {App};
