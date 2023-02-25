@@ -274,6 +274,7 @@ class App {
             } else {
                 self.joystick = new JoyStick({
                     onMove: self.onMove.bind(self)
+
                 })
             }
         }
@@ -468,7 +469,7 @@ class App {
           this.dolly.rotateY(this.dolly.userData.turn * dt)
       }
 
-        if (this.renderer.xr.isPresenting && this.boardData) {
+        if (this.renderer.xr.isPresenting || this.joystick && this.boardData) {
             const scene = this.scene;
             const dollyPos = this.dolly.getWorldPosition(this.vecDolly);
             let boardFound = false;
