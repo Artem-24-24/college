@@ -9,6 +9,7 @@ import {XRControllerModelFactory} from "three/addons/webxr/XRControllerModelFact
 import Stats from "three/addons/libs/stats.module";
 import {LoadingBar} from "./utils/LoadingBar";
 import {RGBELoader} from "three/addons/loaders/RGBELoader";
+import {JoyStick} from "./utils/Toon3D";
 
 import venice_sunset_environment from "../assets/hdr/venice_sunset_1k.hdr"
 import college from "../assets/college.glb"
@@ -21,6 +22,8 @@ import {GazeController} from "./utils/GazeController";
 
 class App {
     constructor() {
+
+
         const container = document.createElement('div');
         document.body.appendChild(container);
 
@@ -221,6 +224,8 @@ class App {
     }
 
     setupXR() {
+
+
         this.renderer.xr.enabled = true
 
         // Add grip controllers
@@ -243,29 +248,44 @@ class App {
 
         const self = this
 
-        // TASK 3. Initialized gaze if missed grip controller
-        const timeoutId = setTimeout(connectionTimeout, 4000)
+        // TASK 4.
+        function vrStatus(available) {
+            if (available) {
+                // TASK 3. Initialized gaze if missed grip controller
+                const timeoutId = setTimeout(connectionTimout, 4000)
 
-        function onConnected(event) {
-            clearTimeout(timeoutId)
+                function onConnected(event) {
+                    clearTimeout(timeoutId)
+                }
+
+                function connectionTimout() {
+                    self.useGaze = true
+                    self.gazeController = new GazeController(self.scene, self.dummyCam)
+                }
+
+                self.controllers = self.buildControllers(self.dolly)
+                self.controllers.forEach((controller) => {
+                    controller.addEventListener('selectstart', onSelectStart)
+                    controller.addEventListener('selectend', onSelectEnd)
+
+                    // TASK 3. Add event listener for `connected` event
+                    controller.addEventListener('connected', onConnected)
+                })
+            } else {
+                self.joystick = new JoyStick({
+                    onMove: self.onMove.bind(self)
+                })
+            }
         }
 
-        function connectionTimeout() {
-            self.useGaze = true
-            self.gazeController = new GazeController(self.scene, self.dummyCam)
-        }
-
-        this.controllers = this.buildControllers(this.dolly)
-        this.controllers.forEach((controller) => {
-            controller.addEventListener('selectstart', onSelectStart)
-            controller.addEventListener('selectend', onSelectEnd)
-
-            // TASK 3. Add event listener for `connected` event
-            controller.addEventListener('connected', onConnected)
-        })
 
         // Add Enter WebXR button
         document.body.appendChild(VRButton.createButton(this.renderer))
+
+        navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
+            vrStatus(supported)
+            // document.getElementById('VRButton').hidden = true
+        })
 
         // TASK 2 Initialize mesh for info board
 
@@ -299,6 +319,13 @@ class App {
         return controllers;
     }
 
+    onMove(forward, turn) {
+        if (this.dolly) {
+            this.dolly.userData.forward = forward
+            this.dolly.userData.turn = -turn
+        }
+    }
+
     moveDolly(dt) {
         if (this.proxy === undefined) return;
 
@@ -314,6 +341,12 @@ class App {
         //Get rotation for movement from the headset pose
         this.dolly.quaternion.copy(this.dummyCam.getWorldQuaternion(q));
         this.dolly.getWorldDirection(dir);
+        if (this.dolly.userData.forward && this.dolly.userData.forward < 0) {
+            dt = -dt
+        }else{
+            dir.negate();
+        }
+        this.raycaster.set(pos, dir)
         dir.negate();
         this.raycaster.set(pos, dir);
 
@@ -425,6 +458,15 @@ class App {
         if (this.renderer.xr.isPresenting && this.selectPressed) {
             this.moveDolly(dt);
         }
+      if (this.joystick
+      && this.dolly.userData.forward
+      && this.dolly.userData.forward !== 0) {
+          this.moveDolly(dt)
+      }
+
+      if (this.joystick && this.dolly.userData.turn) {
+          this.dolly.rotateY(this.dolly.userData.turn * dt)
+      }
 
         if (this.renderer.xr.isPresenting && this.boardData) {
             const scene = this.scene;
@@ -445,6 +487,7 @@ class App {
                 this.ui.visible = false
             }
         }
+
 
 
         if (this.renderer.xr.isPresenting && this.boardData) {
